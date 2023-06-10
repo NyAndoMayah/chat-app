@@ -1,46 +1,49 @@
 import Layout from '@/components/Layout';
-import { Box, Button, Card, TextField } from '@mui/material';
+import useUser from '@/context/userStore';
+import { Box, Card, Typography } from '@mui/material';
+import axios from 'axios';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { SubmitHandler, useForm } from 'react-hook-form';
-
 type InputValues = {
   email: string;
   password: string;
 };
-
 type CommonInputProps = {
   placeholder: string;
   label: string;
   registerField: 'email' | 'password';
   type: 'password' | 'text';
 };
+
 export default function Login() {
   const router = useRouter();
   const { register, handleSubmit } = useForm<InputValues>();
+  const { user, setUser } = useUser();
   const onSubmit: SubmitHandler<InputValues> = (data) => {
-    window.localStorage.setItem('user_infos', JSON.stringify(data));
-    router.push('/chat').catch((error) => console.log(error));
+    async function logIn(data: InputValues) {
+      try {
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_NEXT_PUBLIC_API_URL}/users/login`,
+          data
+        );
+        console.log(response.data);
+        if (response.data.user.token) {
+          window.localStorage.setItem('user_token', response.data.user.token);
+          setUser(response.data.user);
+        }
+        router.push(`/profile`).catch((error) => console.log(error));
+      } catch (error) {
+        console.error(error);
+        alert('Cannot login, check your informations');
+      }
+    }
+    logIn(data);
   };
-  const CommonInput = ({
-    placeholder,
-    label,
-    registerField,
-    type,
-  }: CommonInputProps) => {
+
+  const LoginForm = () => {
     return (
-      <TextField
-        style={{ backgroundColor: 'white', margin: '0.5vw' }}
-        type={type}
-        size="small"
-        placeholder={placeholder}
-        label={label}
-        {...register(registerField, { required: true })}
-      />
-    );
-  };
-  return (
-    <Layout>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Box
           style={{
@@ -77,32 +80,40 @@ export default function Login() {
                 width={70}
                 alt="Your avatar"
               />
-              <CommonInput
-                type="text"
+              <input
+                type="email"
                 placeholder="Your email"
-                label="Email"
-                registerField="email"
+                {...register('email', { required: true })}
               />
-              <CommonInput
+              <input
                 type="password"
                 placeholder="Your password"
-                label="Password"
-                registerField="password"
+                {...register('password', { required: true })}
               />
-              <Button
+              <button
+                className="loginButton"
+                type="submit"
                 style={{
                   margin: '0.5vw',
                   backgroundColor: '#72289B',
                   color: 'white',
                 }}
-                type="submit"
               >
                 Login
-              </Button>
+              </button>
+              <Typography m="auto">
+                Not signed up? Try to <Link href="/sign-up">sign up</Link>
+              </Typography>
             </Box>
           </Card>
         </Box>
       </form>
+    );
+  };
+
+  return (
+    <Layout>
+      <LoginForm />
     </Layout>
   );
 }

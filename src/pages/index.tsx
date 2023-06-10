@@ -8,9 +8,9 @@ export default function Home() {
   const router = useRouter();
   useEffect(() => {
     if (!window.localStorage.getItem('informations')) {
-      router.push('/signUp').catch((err: any) => console.log(err));
+      router.push('/sign-up').catch((err: any) => console.log(err));
     } else {
-      router.push('/chat').catch((err: any) => console.log(err));
+      router.push('/HERE').catch((err: any) => console.log(err));
     }
   }, []);
 }

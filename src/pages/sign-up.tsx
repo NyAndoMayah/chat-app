@@ -1,45 +1,48 @@
 import Layout from '@/components/Layout';
-import { Box, Button, Card, TextField, Typography } from '@mui/material';
+import useUser from '@/context/userStore';
+import { Box, Card, Typography } from '@mui/material';
+import axios from 'axios';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { SubmitHandler, useForm } from 'react-hook-form';
 
 type InputValues = {
-  username: string;
+  name: string;
   bio: string;
   email: string;
   password: string;
   confirmPassword: string;
 };
 
-type CommonInputProps = {
-  placeholder: string;
-  label: string;
-  registerField: 'email' | 'password' | 'username' | 'bio' | 'confirmPassword';
-};
-export default function SignUp() {
+export default function registrationForm() {
+  const { setUser } = useUser();
   const router = useRouter();
   const { register, handleSubmit } = useForm<InputValues>();
   const onSubmit: SubmitHandler<InputValues> = (data) => {
-    window.localStorage.setItem('user_infos', JSON.stringify(data));
-    router.push('/chat').catch((error) => console.log(error));
-  };
-  const CommonInput = ({
-    placeholder,
-    label,
-    registerField,
-  }: CommonInputProps) => {
-    return (
-      <TextField
-        style={{ backgroundColor: 'white', margin: '0.5vw' }}
-        type="text"
-        size="small"
-        placeholder={placeholder}
-        label={label}
-        {...register(registerField, { required: true })}
-      />
-    );
+    async function signUp(data: InputValues) {
+      try {
+        data.bio = '';
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_NEXT_PUBLIC_API_URL}/users`,
+          data
+        );
+        console.log(response.data);
+        if (response.data.token) {
+          window.localStorage.setItem('user_token', response.data.user.token);
+          setUser(response.data.user);
+        }
+        const logged = await axios.post(
+          `${process.env.NEXT_PUBLIC_NEXT_PUBLIC_API_URL}/users/login`,
+          data
+        );
+        window.localStorage.setItem('user_token', logged.data.user.token);
+        router.push(`/profile`).catch((error) => console.log(error));
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    signUp(data);
   };
   return (
     <Layout>
@@ -82,9 +85,7 @@ export default function SignUp() {
           padding: '2vw',
         }}
       >
-        <Typography variant="h3" style={{}}>
-          ChatBliss
-        </Typography>
+        <Typography variant="h3">ChatBliss</Typography>
         <Typography variant="h6">
           Experience the Bliss of Communication with ChatBliss!
           <br />
@@ -121,28 +122,32 @@ export default function SignUp() {
               <Typography variant="h4" m="auto">
                 Sign Up
               </Typography>
-
-              <CommonInput
+              <input
+                type="text"
+                style={{ backgroundColor: 'white', margin: '0.5vw' }}
                 placeholder="Your username"
-                label="Username"
-                registerField="username"
+                {...register('name', { required: true })}
               />
-              <CommonInput
+              <input
+                type="email"
+                style={{ backgroundColor: 'white', margin: '0.5vw' }}
                 placeholder="Your email"
-                label="Email"
-                registerField="email"
+                {...register('email', { required: true })}
               />
-              <CommonInput
+              <input
+                type="password"
+                style={{ backgroundColor: 'white', margin: '0.5vw' }}
                 placeholder="Your password"
-                label="Password"
-                registerField="password"
+                {...register('password', { required: true })}
               />
-              <CommonInput
+              <input
+                type="password"
+                style={{ backgroundColor: 'white', margin: '0.5vw' }}
                 placeholder="Confirm your password"
-                label="Confirm"
-                registerField="confirmPassword"
+                {...register('confirmPassword', { required: true })}
               />
-              <Button
+              <button
+                className="registerButton"
                 style={{
                   margin: '0.5vw',
                   backgroundColor: '#72289B',
@@ -150,8 +155,8 @@ export default function SignUp() {
                 }}
                 type="submit"
               >
-                Submit
-              </Button>
+                Register
+              </button>
               <Typography m="auto">
                 Already signed up? Try to <Link href="/login">login</Link>
               </Typography>
